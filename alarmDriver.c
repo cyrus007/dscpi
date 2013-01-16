@@ -26,6 +26,11 @@
 static volatile char dtmf_val = 0 ;
 static volatile char code[16] ;
 
+/*
+ * genTeltone: generate either dialtone (400Hz) or kissoff-tone (1400Hz)
+ *********************************************************************************
+ */
+
 int genTeltone (int tone)
 {
   if (tone == DIALTONE)
@@ -39,7 +44,13 @@ int genTeltone (int tone)
   return 0;
 }
 
-static PI_THREAD (dtmfHandler) {
+/*
+ * cidHandler: worker thread to handle Contact-ID protocol
+ *********************************************************************************
+ */
+
+static PI_THREAD (cidHandler)
+{
   (void)piHiPri (10);	// Set this thread to be high priority
   for (;;) {
     genTeltone (DIALTONE);	// phone can go off-hook only if there is dial-tone
@@ -115,6 +126,11 @@ void intrDTMF (void)
   }
 }
 
+/*
+ * setup: setup the GPIO pins and worker thread
+ *********************************************************************************
+ */
+
 int setup (void) {
   if (wiringPiSetup () == -1)
   {
@@ -133,8 +149,8 @@ int setup (void) {
     fprintf (stderr, "Unable to setup ISR: %s\n", strerror(errno));  fflush (stderr);
     return -1;
   }
-  if (piThreadCreate (dtmfHandler) < 0) {
-    fprintf (stderr, "Unable to create dtmfHandler thread: %s\n", strerror(errno));  fflush (stderr);
+  if (piThreadCreate (cidHandler) < 0) {
+    fprintf (stderr, "Unable to create cidHandler thread: %s\n", strerror(errno));  fflush (stderr);
     return -1;
   }
 }
